@@ -1,110 +1,278 @@
-1 Objectif
-L’objectif de ce mini-projet est de concevoir et implémenter une application reposant sur une
-architecture microservices, en utilisant Spring Boot et Spring Cloud.
-Les objectifs pédagogiques sont :
-— Comprendre la décomposition d’un système en microservices
-— Mettre en œuvre la découverte de services
-— Centraliser l’accès via une API Gateway
-— Implémenter la résilience dans un système distribué
-2 Contexte fonctionnel
+# Microservices Mini Project (Hospital Management)
 
-Le système développé représente une version simplifiée d’un système de gestion hospita-
-lière permettant :
+Projet de mini plateforme hospitalière en architecture microservices avec Spring Boot / Spring Cloud.
 
-— la gestion des patients,
-— la planification des rendez-vous médicaux,
-— la gestion des dossiers médicaux.
+## Fonctionnalités
 
-L’architecture doit rester tolérante aux pannes et opérationnelle même en cas d’indispo-
-nibilité partielle.
+- Gestion des patients (`patient-service`)
+- Gestion des rendez-vous (`appointment-service`)
+- Gestion des dossiers médicaux + historique (`medical-record-service`)
+- API Gateway (`api-gateway`)
+- Service Discovery avec Eureka (`eureka-server`)
+- Configuration centralisée avec Spring Cloud Config (`config-server` + `config-repo`)
+- Résilience inter-services avec Circuit Breaker (Resilience4j)
 
-3 Architecture globale
-Vue générale de l’architecture
-L’application est composée de microservices métiers autonomes, soutenus par des services
-d’infrastructure assurant la communication, la configuration et la résilience.
-3.1 Microservices métiers
-— Patient Service
-— Appointment Service
-— Medical Record Service
-3.2 Services d’infrastructure
-— Eureka Server (Service Discovery)
-— API Gateway (Spring Cloud Gateway)
-— Config Server
+## Architecture
 
-1
+### Microservices métiers
 
-4 Description détaillée des microservices
-4.1 Patient Service
-Responsabilité principale :
-— Gestion des informations administratives des patients
-Fonctionnalités exposées :
-— Création d’un patient
-— Consultation d’un patient
-— Liste des patients
-Attributs principaux :
-— id
-— nom
-— prénom
-— date de naissance
-— contact
-Dépendances :
-— Aucune (service autonome)
-4.2 Appointment Service
-Responsabilité principale :
-— Gestion des rendez-vous médicaux
-Fonctionnalités exposées :
-— Création d’un rendez-vous
-— Association d’un rendez-vous à un patient
-— Consultation des rendez-vous d’un patient
-Dépendances fonctionnelles :
-— Patient Service (vérification de l’existence du patient)
-Type de communication :
-— Appel REST via API Gateway
-— Découverte dynamique via Eureka
-4.3 Medical Record Service
-Responsabilité principale :
-— Gestion des dossiers médicaux des patients
-Fonctionnalités exposées :
-— Création d’un dossier médical
-— Ajout de diagnostics
-— Consultation de l’historique médical
-Dépendances fonctionnelles :
-— Patient Service (association dossier–patient)
+- `patient-service`
+- `appointment-service`
+- `medical-record-service`
 
-2
+### Services d’infrastructure
 
-5 Dépendances inter-services
-Résumé des dépendances
-— API Gateway → Tous les microservices
-— Appointment Service → Patient Service
-— Medical Record Service → Patient Service
-— Tous les services → Eureka Server
-— Tous les services → Config Server
-La communication repose sur :
-— Protocoles REST
-— Format JSON
-— Routage centralisé via l’API Gateway
-— Découverte automatique des services avec Eureka
-6 Résilience
-La résilience est assurée par Spring Cloud Circuit Breaker et Resilience4j.
-6.1 Mécanismes implémentés
-— Circuit Breaker
-— Timeout
-— Retry
-— Fallback
-6.2 Scénarios de défaillance
-— Indisponibilité des services
-— Latence élevée
-— Erreurs transitoires
-Dans ces cas, le système doit garantir une dégradation contrôlée sans arrêt global.
-7 Technologies utilisées
+- `config-server`
+- `eureka-server`
+- `api-gateway`
+- `config-repo` (fichiers de configuration externalisés)
 
-Domaine Technologie
-Langage Java
-Framework Spring Boot
-Service Discovery Eureka
-API Gateway Spring Cloud Gateway
-Communication REST, OpenFeign
-Résilience Resilience4j
-Base de données H2 / MySQL
-Build Maven
+### Communication
+
+- Client -> `api-gateway`
+- `api-gateway` -> services via Eureka (`lb://...`)
+- `appointment-service` -> `patient-service` via OpenFeign
+- `medical-record-service` -> `patient-service` via OpenFeign
+- Appels Feign protégés par circuit breaker (`patientService`)
+
+## Stack Technique
+
+- Java 17
+- Spring Boot 3.2.5
+- Spring Cloud 2023.0.1
+- Maven (multi-modules)
+- Spring Web
+- Spring Data JPA
+- H2
+- Eureka Client/Server
+- Spring Cloud Config
+- Spring Cloud Gateway
+- OpenFeign
+- Resilience4j (Circuit Breaker)
+- Actuator
+- Lombok
+
+## Structure du projet
+
+```text
+.
+├── api-gateway
+├── appointment-service
+├── config-repo
+├── config-server
+├── eureka-server
+├── medical-record-service
+├── patient-service
+├── pom.xml
+├── start-all-services.sh
+└── stop-all-services.sh
+```
+
+## Ports (configuration actuelle)
+
+- `api-gateway` -> `8080`
+- `patient-service` -> `8081`
+- `appointment-service` -> `8082`
+- `medical-record-service` -> `8083`
+- `eureka-server` -> `8761`
+- `config-server` -> `8888`
+
+## Prérequis
+
+- Java 17+
+- Maven (`mvn`)
+- `nc` (netcat) pour les scripts de démarrage/arrêt
+
+## Démarrage rapide
+
+### Option 1 (recommandée) : scripts fournis
+
+Démarrer toute la stack :
+
+```bash
+./start-all-services.sh
+```
+
+Arrêter toute la stack :
+
+```bash
+./stop-all-services.sh
+```
+
+Les scripts :
+- démarrent les services dans le bon ordre
+- attendent l’ouverture des ports
+- écrivent les logs dans `.run/logs/`
+- stockent les PID dans `.run/pids/`
+
+### Option 2 : démarrage manuel
+
+Ordre recommandé :
+
+1. `config-server`
+2. `eureka-server`
+3. `patient-service`
+4. `appointment-service`
+5. `medical-record-service`
+6. `api-gateway`
+
+Exemple :
+
+```bash
+mvn -pl config-server spring-boot:run
+```
+
+## Vérifications rapides
+
+```bash
+curl -i http://localhost:8761
+curl -i http://localhost:8080/actuator/health
+curl -i http://localhost:8080/actuator/gateway/routes
+```
+
+## Routes API Gateway
+
+Configurées dans `config-repo/api-gateway.yml` :
+
+- `/api/v1/patients/**` -> `PATIENT-SERVICE`
+- `/api/v1/appointments/**` -> `APPOINTMENT-SERVICE`
+- `/api/v1/medical-records/**` -> `MEDICAL-RECORD-SERVICE`
+
+## Endpoints principaux (via Gateway)
+
+### Patients
+
+- `POST /api/v1/patients`
+- `GET /api/v1/patients`
+- `GET /api/v1/patients/{id}`
+- `PUT /api/v1/patients/{id}`
+- `DELETE /api/v1/patients/{id}`
+
+### Appointments
+
+- `POST /api/v1/appointments`
+- `GET /api/v1/appointments`
+- `GET /api/v1/appointments/patient/{patientId}`
+- `PUT /api/v1/appointments/{id}`
+
+### Medical Records
+
+- `POST /api/v1/medical-records`
+- `GET /api/v1/medical-records/patient/{patientId}`
+- `POST /api/v1/medical-records/patient/{patientId}/entries`
+- `GET /api/v1/medical-records/{recordId}`
+
+## Exemples `curl`
+
+### 1) Créer un patient
+
+```bash
+curl -i -X POST http://localhost:8080/api/v1/patients \
+  -H "Content-Type: application/json" \
+  -d '{"name":"Doe","firstName":"John","birthDate":"1995-06-15","contact":"0600000000"}'
+```
+
+### 2) Créer un rendez-vous
+
+```bash
+curl -i -X POST http://localhost:8080/api/v1/appointments \
+  -H "Content-Type: application/json" \
+  -d '{"date":"2026-02-22","time":"10:30:00","patientId":1}'
+```
+
+### 3) Créer un dossier médical
+
+```bash
+curl -i -X POST http://localhost:8080/api/v1/medical-records \
+  -H "Content-Type: application/json" \
+  -d '{"patientId":1,"bloodType":"O+","allergies":"Penicillin"}'
+```
+
+### 4) Ajouter une entrée au dossier
+
+```bash
+curl -i -X POST http://localhost:8080/api/v1/medical-records/patient/1/entries \
+  -H "Content-Type: application/json" \
+  -d '{"date":"2026-02-22","type":"CONSULTATION","content":"Routine follow-up visit"}'
+```
+
+### 5) Lire le dossier médical d’un patient
+
+```bash
+curl -i http://localhost:8080/api/v1/medical-records/patient/1
+```
+
+## Règles métier (Medical Record Service)
+
+- Impossible de créer un dossier médical pour un patient inexistant
+- Un patient possède au plus **un** dossier médical
+- Une entrée d’historique doit être rattachée à un dossier existant
+
+## Résilience (Circuit Breaker)
+
+Les appels vers `patient-service` depuis :
+- `appointment-service`
+- `medical-record-service`
+
+sont protégés par **Resilience4j Circuit Breaker**.
+
+### Comportement attendu
+
+- Si `patient-service` tombe en panne :
+  - les premiers appels échouent (timeout/connexion)
+  - après dépassement du seuil d’échec, le circuit s’ouvre
+  - les appels suivants échouent rapidement avec `503 Service Unavailable`
+
+### Vérification (exemple)
+
+1. Démarrer toute la stack
+2. Arrêter `patient-service`
+3. Appeler un endpoint dépendant du patient
+
+```bash
+curl -i -X POST http://localhost:8080/api/v1/medical-records \
+  -H "Content-Type: application/json" \
+  -d '{"patientId":1}'
+```
+
+## Build
+
+Compiler un service :
+
+```bash
+mvn -pl medical-record-service -DskipTests compile
+```
+
+Compiler tout le projet :
+
+```bash
+mvn -DskipTests compile
+```
+
+## Rapport
+
+Le rapport détaillé du projet est disponible dans :
+
+- `RAPPORT_MICROSERVICES.md`
+
+Vous pouvez l’exporter en PDF avec Pandoc :
+
+```bash
+pandoc RAPPORT_MICROSERVICES.md -o Rapport_Microservices.pdf
+```
+
+## Git
+
+Le projet inclut un `.gitignore` pour :
+- outputs Maven (`target/`)
+- logs
+- fichiers runtime (`.run/`)
+- fichiers IDE (`.vscode/`, `.idea/`)
+
+## Améliorations possibles
+
+- `@ControllerAdvice` global pour centraliser les erreurs
+- tests unitaires / intégration
+- Docker Compose
+- authentification via API Gateway (JWT/OAuth2)
+- observabilité (Prometheus/Grafana, tracing)
