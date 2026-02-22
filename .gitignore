@@ -1,0 +1,38 @@
+# Maven / Java build outputs
+**/target/
+*.class
+*.jar
+*.war
+*.ear
+
+# Maven wrapper (keep the wrapper scripts/jars if later added)
+!.mvn/wrapper/maven-wrapper.jar
+
+# Logs
+*.log
+logs/
+
+# Runtime helper files created by local scripts
+.run/
+
+# IDEs
+.vscode/
+.idea/
+*.iml
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Temporary files
+*.tmp
+*.swp
+*~
+
+# Environment / secrets (if added later)
+.env
+.env.*
+
+# Java crash logs
+hs_err_pid*
+replay_pid*
